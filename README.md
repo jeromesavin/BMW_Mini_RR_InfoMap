@@ -52,7 +52,7 @@ The map name in the XML will be in this case extended with FSCShort, MapRegion a
       [-u | --usage]                      Display this message
       [-h | --help]                       Display this message
 
-Submit bugs to https://github.com/jeromesavin/BMW_Mini_RR_InfoMap.sh/
+Submit bugs to https://github.com/jeromesavin/BMW_Mini_RR_InfoMap/
 
 So main arguments are :
 
