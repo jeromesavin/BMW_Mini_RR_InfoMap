@@ -66,6 +66,7 @@ So main arguments are :
 
 # Little RoadMap
 
+    - Better prerequisites checkup (presence of 7z in the path, etc.)
     - Better error management
     - Self-update mechanism
     - etc.
