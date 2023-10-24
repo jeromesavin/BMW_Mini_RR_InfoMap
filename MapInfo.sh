@@ -6,7 +6,7 @@
 
 # Example
 # ./MapInfo.sh -v -d "./Europe EVO 2022-1"
- 
+
 
 
 # Set variables
@@ -15,8 +15,10 @@ VERBOSE=""
 GENERATEXML=""
 MAP_FOLDER=""
 ZIP_FILE=""
-ARCHIVE_FILE="" 
+ARCHIVE_FILE=""
 DEFAULT=""
+# Some systems (e.g. OS X with Homebrew) use 7zz instead of 7z
+SEVEN_ZIP="7z"
 
 # Functions declaration
 
@@ -64,11 +66,11 @@ function showLookupXMLEntry() {
 
 
 # NoteBook
-#➜  Mini Nav Maps 2022 ARGUMENT_TYPE=`file 'NBTEvo SA609 NBTEVO Europe 2021-3.tar' | awk -F':' '{ print $2}' | sed 's/ //g'` ; echo $ARGUMENT_TYPE 
+#➜  Mini Nav Maps 2022 ARGUMENT_TYPE=`file 'NBTEvo SA609 NBTEVO Europe 2021-3.tar' | awk -F':' '{ print $2}' | sed 's/ //g'` ; echo $ARGUMENT_TYPE
 # POSIXtararchive
-# ➜  Mini Nav Maps 2022 ARGUMENT_TYPE=`file 'Road_Map_Europe_EVO_2022-2-BU.zip' | awk -F':' '{ print $2}' | sed 's/ //g'`; echo $ARGUMENT_TYPE  
+# ➜  Mini Nav Maps 2022 ARGUMENT_TYPE=`file 'Road_Map_Europe_EVO_2022-2-BU.zip' | awk -F':' '{ print $2}' | sed 's/ //g'`; echo $ARGUMENT_TYPE
 # Ziparchivedata,atleastv2.0toextract,compressionmethod=store
-# ➜  Mini Nav Maps 2022 ARGUMENT_TYPE=`file 'Europe EVO 2022-1.7z' | awk -F':' '{ print $2}' | sed 's/ //g'` ; echo $ARGUMENT_TYPE              
+# ➜  Mini Nav Maps 2022 ARGUMENT_TYPE=`file 'Europe EVO 2022-1.7z' | awk -F':' '{ print $2}' | sed 's/ //g'` ; echo $ARGUMENT_TYPE
 # 7-ziparchivedata,version0.4
 # ➜  Mini Nav Maps 2022
 
@@ -76,23 +78,24 @@ function showLookupXMLEntry() {
 
 
 function processArchiveFile () {
+    echo "CALL processArcihveFile"
     if [ "${ARCHIVE_FILE}" != "" ]
     then
         if [ -f "${ARCHIVE_FILE}" ]
         then
             if [ "${VERBOSE}" == "1" ] ; then echo -e "File archive exists"; fi
-            PATH_TO_INFOMAP_FILE=`7z l "${ARCHIVE_FILE}" | grep "${INFO_MAP_FILENAME}" | grep -v "LIGHT" | awk '{print $NF}'`
+            PATH_TO_INFOMAP_FILE=`${SEVEN_ZIP} l "${ARCHIVE_FILE}" | grep "${INFO_MAP_FILENAME}" | grep -v "LIGHT" | awk '{print $NF}'`
             if [ "${VERBOSE}" == "1" ]
             then
                 echo -e "Archive content ..."
-                7z l "${ARCHIVE_FILE}"    
+                ${SEVEN_ZIP} l "${ARCHIVE_FILE}"
             fi
             if [ "${VERBOSE}" == "1" ] ; then echo -e "Looking for ${INFO_MAP_FILENAME} file into archive... [OK] - ${PATH_TO_INFOMAP_FILE}"; fi
-            
+
             # Get filename extension
             filename=$(basename -- "${ARCHIVE_FILE}") ; extension="${filename##*.}" ; filename="${filename%.*}"
             if [ "${VERBOSE}" == "1" ] ; then echo -e "Archive extension is : $extension"; echo -e "OS says : `file ${ARCHIVE_FILE}`"; fi
-            
+
             # Switch case
             if [ "${extension}" == "7z" ] || [ "${extension}" == "7Z" ]
             then
@@ -101,10 +104,10 @@ function processArchiveFile () {
                 echo -e "Please note that only one file will be extracted from archive, so do not worry about spacedisk."
                 echo -e " "
                 tput bold; echo -e "Please wait a little bit ((i.e. 2 or 3 minutes) while we are looking for the file in a 7zip archive (mins.) ! "; tput sgr0
-                7z -y e "${ARCHIVE_FILE}" -o"/tmp" ${PATH_TO_INFOMAP_FILE}
+                ${SEVEN_ZIP} -y e "${ARCHIVE_FILE}" -o"/tmp" ${PATH_TO_INFOMAP_FILE}
             else
                 # Case of other extensions (.zip / .ZIP / .tar)
-                7z -y e "${ARCHIVE_FILE}" -o"/tmp" ${PATH_TO_INFOMAP_FILE} > /dev/null
+                ${SEVEN_ZIP} -y e "${ARCHIVE_FILE}" -o"/tmp" ${PATH_TO_INFOMAP_FILE} > /dev/null
             fi
 
             # Verifying presence of Info_Map.imp file on disk
@@ -118,12 +121,13 @@ function processArchiveFile () {
                 exit 2;
             fi
         else
-            echo -e "ERROR : ${ARCHIVE_FILE} file dos not exists"
+            echo -e "ERROR : ${ARCHIVE_FILE} file does not exists"
             exit 2
         fi
+    else
         echo "Function processArchiveFile called but variable ARCHIVE_FILE is missing"
         exit 99 # Internal error (i.e. BUG)
-    fi    
+    fi
 }
 
 
@@ -135,18 +139,17 @@ function setWorkDir () {
     else
         echo -e "ERROR the given folder in argument doesn't exists"
         exit 2
-    fi    
+    fi
 }
 
 function processFolder() {
     if [ "${VERBOSE}" == "1" ] ; then echo -e "Processing in folder ${MAP_FOLDER} ..." ; fi
-    
     # Looking where we are, map folder or not (it should contain a subfolder named "1" ?
     if [ -d ./1 ]
     then
         export MAP_DIR=`echo -e $PWD`
         if [ "${VERBOSE}" == "1" ] ; then echo -e "We are inside Map folder: ${MAP_FOLDER} ... [OK]"; fi
-        
+
         # Looking for InfoMap.imp file in the subfolder ./1/INFOxxxxx not containing "LIGHT" string
         if [ "${VERBOSE}" == "1" ] ; then echo -e "Looking for InfoMap file (${INFO_MAP_FILENAME})\c" ; fi
         ls 1/INFO*/${INFO_MAP_FILENAME} | grep -v "LIGHT" >/dev/null && export INFOMAP_FILE=`ls 1/INFO*/Info_Map.imp | grep -v "LIGHT"`
@@ -159,7 +162,7 @@ function processFolder() {
         echo -e " "
         tput bold;
         echo -e "---------------------------------- [ERROR] -----------------------------------------------";
-        echo -e "We are not in a map folder (or try to delete spaces/special caracters in folder name/path)"; 
+        echo -e "We are not in a map folder (or try to delete spaces/special caracters in folder name/path)";
         echo -e " "
         tput sgr0
         exit 2
@@ -209,7 +212,7 @@ while [[ $# -gt 0 ]]; do
         GENERATEXML="1"
         shift # past value
         ;;
-    
+
     --default)
         # Note that is UNUSED
         DEFAULT=YES
@@ -227,7 +230,7 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
-# End of argument management 
+# End of argument management
 
 # Usefull for argument debugging
 if [ "${VERBOSE}" == "1" ] ; then
@@ -254,7 +257,7 @@ else
     if [ "${ARCHIVE_FILE}" != "" ]
     then
         if [ "${VERBOSE}" == "1" ] ; then echo -e "Looking into archive file ${ARCHIVE_FILE}"; fi
-        # Process the archive in order to find Info_Map.imp file 
+        # Process the archive in order to find Info_Map.imp file
         processArchiveFile
     else
         if [ "${VERBOSE}" == "1" ] ; then echo -e "Switching local directory as map folder (ie. as you pass -d `pwd`)"; fi
@@ -277,4 +280,3 @@ showMapInfos
 
 # generate XML entry to add in Lookup.xml ?
 if [ "${GENERATEXML}" == "1" ] ; then showLookupXMLEntry; fi
-    
